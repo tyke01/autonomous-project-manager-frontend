@@ -14,7 +14,11 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useSortable } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { toast } from "sonner";
 
 // Task status type
@@ -54,9 +58,7 @@ function TaskCard({ task }: { task: any }) {
       className="bg-neutral-700 p-4 rounded-lg cursor-grab active:cursor-grabbing hover:bg-neutral-600 transition-colors"
     >
       <h3 className="font-semibold text-white mb-2">{task.title}</h3>
-      <p className="text-sm text-gray-300 mb-2">
-        {task.description}
-      </p>
+      <p className="text-sm text-gray-300 mb-2">{task.description}</p>
       <div className="text-xs text-gray-400">
         <div>Est: {task.estimated_days} days</div>
         {task.actual_days && <div>Actual: {task.actual_days} days</div>}
@@ -77,7 +79,14 @@ function Column({
   color: string;
   tasks: any[];
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
+  //   const { setNodeRef, isOver } = useDroppable({ id });
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+    data: {
+      type: "column",
+      status: id,
+    },
+  });
 
   return (
     <div className="flex-1 min-w-64">
@@ -88,16 +97,23 @@ function Column({
         }`}
       >
         <h2 className="text-white font-semibold mb-4 text-center">{label}</h2>
-        <div className="space-y-3 min-h-96">
-          {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-          {tasks.length === 0 && (
-            <div className="text-gray-500 text-center py-8 text-sm">
-              Drop tasks here
-            </div>
-          )}
-        </div>
+
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-3 min-h-96">
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} />
+            ))}
+
+            {tasks.length === 0 && (
+              <div className="text-gray-500 text-center py-8 text-sm">
+                Drop tasks here
+              </div>
+            )}
+          </div>
+        </SortableContext>
       </div>
     </div>
   );
@@ -157,7 +173,19 @@ export default function ProjectDetailPage() {
     if (!over) return;
 
     const taskId = active.id as number;
-    const newStatus = over.id as TaskStatus;
+
+    // const newStatus = over.id as TaskStatus;
+    let newStatus: TaskStatus | null = null;
+
+    if (over.data.current?.type === "column") {
+      newStatus = over.data.current.status;
+    } else {
+      // Dropped on a task → use that task's status
+      const overTask = project.tasks.find((t: any) => t.id === over.id);
+      newStatus = overTask?.status ?? null;
+    }
+
+    if (!newStatus) return;
 
     // Find the task being moved
     const task = project.tasks.find((t: any) => t.id === taskId);
