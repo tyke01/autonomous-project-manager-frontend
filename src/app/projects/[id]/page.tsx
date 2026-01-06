@@ -20,20 +20,21 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { toast } from "sonner";
+import TaskAssistantSheet from "@/components/task-assistant-sheet";
 
 // Task status type
 type TaskStatus = "pending" | "in_progress" | "completed" | "blocked";
 
 // Column configuration
 const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
-  { id: "pending", label: "Pending", color: "border-gray-500" },
+  { id: "pending", label: "Pending", color: "border-neutral-500" },
   { id: "in_progress", label: "In Progress", color: "border-blue-500" },
   { id: "completed", label: "Completed", color: "border-green-500" },
   { id: "blocked", label: "Blocked", color: "border-red-500" },
 ];
 
 // Draggable Task Card Component
-function TaskCard({ task }: { task: any }) {
+function TaskCard({ task, projectGoal }: { task: any; projectGoal: string }) {
   const {
     attributes,
     listeners,
@@ -53,16 +54,27 @@ function TaskCard({ task }: { task: any }) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="bg-neutral-700 p-4 rounded-lg cursor-grab active:cursor-grabbing hover:bg-neutral-600 transition-colors"
+      className="bg-neutral-700 p-4 rounded-lg hover:bg-neutral-600 transition-colors"
     >
-      <h3 className="font-semibold text-white mb-2">{task.title}</h3>
-      <p className="text-sm text-gray-300 mb-2">{task.description}</p>
-      <div className="text-xs text-gray-400">
+      {/* Drag handle - only this area is draggable */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing mb-3"
+      >
+        <h3 className="font-semibold text-white mb-2">{task.title}</h3>
+        <p className="text-sm text-neutral-300 mb-2 line-clamp-2">
+          {task.description}
+        </p>
+      </div>
+
+      <div className="text-xs text-neutral-400 mb-3">
         <div>Est: {task.estimated_days} days</div>
         {task.actual_days && <div>Actual: {task.actual_days} days</div>}
       </div>
+
+      {/* AI Assistant Button */}
+      <TaskAssistantSheet task={task} projectGoal={projectGoal} />
     </div>
   );
 }
@@ -73,20 +85,15 @@ function Column({
   label,
   color,
   tasks,
+  projectGoal,
 }: {
   id: TaskStatus;
   label: string;
   color: string;
   tasks: any[];
+  projectGoal: string;
 }) {
-  //   const { setNodeRef, isOver } = useDroppable({ id });
-  const { setNodeRef, isOver } = useDroppable({
-    id,
-    data: {
-      type: "column",
-      status: id,
-    },
-  });
+  const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
     <div className="flex-1 min-w-64">
@@ -97,23 +104,16 @@ function Column({
         }`}
       >
         <h2 className="text-white font-semibold mb-4 text-center">{label}</h2>
-
-        <SortableContext
-          items={tasks.map((t) => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-3 min-h-96">
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-
-            {tasks.length === 0 && (
-              <div className="text-gray-500 text-center py-8 text-sm">
-                Drop tasks here
-              </div>
-            )}
-          </div>
-        </SortableContext>
+        <div className="space-y-3 min-h-96">
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} projectGoal={projectGoal} />
+          ))}
+          {tasks.length === 0 && (
+            <div className="text-neutral-500 text-center py-8 text-sm">
+              Drop tasks here
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -228,7 +228,7 @@ export default function ProjectDetailPage() {
       {/* Project Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
-        <p className="text-gray-600 mb-4">{project.goal}</p>
+        <p className="text-neutral-600 mb-4">{project.goal}</p>
 
         <div className="flex gap-4">
           <div className="bg-blue-500 text-white px-4 py-2 rounded">
@@ -260,6 +260,7 @@ export default function ProjectDetailPage() {
                 label={column.label}
                 color={column.color}
                 tasks={tasksByStatus?.[column.id] || []}
+                projectGoal={project.goal}
               />
             ))}
           </div>

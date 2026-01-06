@@ -63,6 +63,14 @@ export default function ProjectsPage() {
     }
   };
 
+  const updateStatus = () => {
+    try {
+        
+    } catch (error) {
+        
+    }
+  }
+
   if (loading) {
     return <div className="p-6">Loading projects...</div>;
   }

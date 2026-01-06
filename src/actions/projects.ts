@@ -55,3 +55,17 @@ export const updateTaskStatus = async (taskId: number, status: string) => {
     throw error;
   }
 };
+
+export const getTaskGuidance = async (taskTitle: string, taskDescription: string, projectGoal: string) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/tasks/ai-guidance/`, {
+      task_title: taskTitle,
+      task_description: taskDescription,
+      project_goal: projectGoal,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error getting task guidance:", error);
+    throw error;
+  }
+};
