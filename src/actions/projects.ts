@@ -69,3 +69,37 @@ export const getTaskGuidance = async (taskTitle: string, taskDescription: string
     throw error;
   }
 };
+
+// Get conversation history
+export const getTaskConversation = async (taskId: number) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/tasks/${taskId}/conversation/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching conversation:", error);
+    throw error;
+  }
+};
+
+// Send a message
+export const sendTaskMessage = async (taskId: number, message: string) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/tasks/${taskId}/conversation/`, {
+      message,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error sending message:", error);
+    throw error;
+  }
+};
+
+// Clear conversation
+export const clearTaskConversation = async (taskId: number) => {
+  try {
+    await axios.delete(`${API_BASE_URL}/tasks/${taskId}/conversation/clear/`);
+  } catch (error) {
+    console.error("Error clearing conversation:", error);
+    throw error;
+  }
+};

@@ -27,7 +27,7 @@ type TaskStatus = "pending" | "in_progress" | "completed" | "blocked";
 
 // Column configuration
 const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
-  { id: "pending", label: "Pending", color: "border-neutral-500" },
+  { id: "pending", label: "Pending", color: "border-gray-500" },
   { id: "in_progress", label: "In Progress", color: "border-blue-500" },
   { id: "completed", label: "Completed", color: "border-green-500" },
   { id: "blocked", label: "Blocked", color: "border-red-500" },
@@ -54,7 +54,7 @@ function TaskCard({ task, projectGoal }: { task: any; projectGoal: string }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-neutral-700 p-4 rounded-lg hover:bg-neutral-600 transition-colors"
+      className="bg-zinc-700 p-4 rounded-lg hover:bg-zinc-600 transition-colors"
     >
       {/* Drag handle - only this area is draggable */}
       <div
@@ -63,12 +63,12 @@ function TaskCard({ task, projectGoal }: { task: any; projectGoal: string }) {
         className="cursor-grab active:cursor-grabbing mb-3"
       >
         <h3 className="font-semibold text-white mb-2">{task.title}</h3>
-        <p className="text-sm text-neutral-300 mb-2 line-clamp-2">
+        <p className="text-sm text-gray-300 mb-2 line-clamp-2">
           {task.description}
         </p>
       </div>
 
-      <div className="text-xs text-neutral-400 mb-3">
+      <div className="text-xs text-gray-400 mb-3">
         <div>Est: {task.estimated_days} days</div>
         {task.actual_days && <div>Actual: {task.actual_days} days</div>}
       </div>
@@ -93,27 +93,38 @@ function Column({
   tasks: any[];
   projectGoal: string;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+    data: {
+      type: "column",
+      status: id,
+    },
+  });
 
   return (
     <div className="flex-1 min-w-64">
       <div
         ref={setNodeRef}
-        className={`border-t-4 ${color} bg-neutral-800 rounded-lg p-4 transition-colors ${
+        className={`border-t-4 ${color} bg-zinc-800 rounded-lg p-4 transition-colors ${
           isOver ? "ring-2 ring-white ring-opacity-50" : ""
         }`}
       >
         <h2 className="text-white font-semibold mb-4 text-center">{label}</h2>
-        <div className="space-y-3 min-h-96">
-          {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} projectGoal={projectGoal} />
-          ))}
-          {tasks.length === 0 && (
-            <div className="text-neutral-500 text-center py-8 text-sm">
-              Drop tasks here
-            </div>
-          )}
-        </div>
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-3 min-h-96">
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} projectGoal={projectGoal} />
+            ))}
+            {tasks.length === 0 && (
+              <div className="text-gray-500 text-center py-8 text-sm">
+                Drop tasks here
+              </div>
+            )}
+          </div>
+        </SortableContext>
       </div>
     </div>
   );
@@ -228,7 +239,7 @@ export default function ProjectDetailPage() {
       {/* Project Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
-        <p className="text-neutral-600 mb-4">{project.goal}</p>
+        <p className="text-gray-600 mb-4">{project.goal}</p>
 
         <div className="flex gap-4">
           <div className="bg-blue-500 text-white px-4 py-2 rounded">
