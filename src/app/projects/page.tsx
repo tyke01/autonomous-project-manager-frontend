@@ -21,6 +21,7 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createProject } from "@/actions/projects";
+import { CircleArrowOutUpRight, SquareArrowOutUpRight } from "lucide-react";
 
 const projectSchema = z.object({
   title: z.string().min(1, "Title is required").max(255, "Title too long"),
@@ -62,14 +63,6 @@ export default function ProjectsPage() {
       setIsSubmitting(false);
     }
   };
-
-  const updateStatus = () => {
-    try {
-        
-    } catch (error) {
-        
-    }
-  }
 
   if (loading) {
     return <div className="p-6">Loading projects...</div>;
@@ -136,11 +129,7 @@ export default function ProjectsPage() {
 
                 <div className="grid gap-3">
                   <Label htmlFor="deadline">Deadline (optional)</Label>
-                  <Input
-                    {...register("deadline")}
-                    type="date"
-                    id="deadline"
-                  />
+                  <Input {...register("deadline")} type="date" id="deadline" />
                 </div>
               </div>
 
@@ -168,31 +157,64 @@ export default function ProjectsPage() {
           <div key={project.id} className="border p-4 rounded-lg">
             <div className="flex flex-col justify-between items-start">
               <div className="flex-1">
-                <Link href={`/projects/${project.id}`}>
-                  <h2 className="text-xl font-semibold hover:text-blue-600">
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="flex items-center gap-4 group mb-4"
+                >
+                  <h2 className="text-xl font-semibold group-hover:text-blue-600 transition-colors">
                     {project.title}
                   </h2>
+                  <SquareArrowOutUpRight className="w-5 group-hover:text-blue-600 transition-colors" />
                 </Link>
-                <p className="text-gray-600 mt-1 max-w-2xl">{project.goal}</p>
+
+                <p className="text-gray-400 mt-1 max-w-2xl">{project.goal}</p>
                 <div className="mt-2 flex gap-2 text-sm">
-                  <span className="bg-gray-500 text-white px-2 py-1 rounded">
+                  <span className="bg-green-500 text-white px-2 py-1 rounded">
                     {project.status}
                   </span>
-                  <span className="bg-blue-500 text-white px-2 py-1 rounded">
+                  <span className="bg-neutral-500 text-white px-2 py-1 rounded">
                     {project.total_estimated_days} days total
                   </span>
-                  <span className="bg-green-500 text-white px-2 py-1 rounded">
+                  <span className="bg-neutral-500 text-white px-2 py-1 rounded">
                     {project.tasks.length} tasks
                   </span>
                 </div>
               </div>
-              <Button
-                onClick={() => deleteProject(project.id)}
-                variant="destructive"
-                className="mt-6"
-              >
-                Delete
-              </Button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="mt-6 cursor-pointer"
+                  >
+                    Delete
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Project</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this project? This action
+                      cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      onClick={() => deleteProject(project.id)}
+                      variant="destructive"
+                      className="cursor-pointer"
+                    >
+                      Confirm Delete
+                    </Button>
+
+                    <DialogClose asChild>
+                      <Button variant="outline" className="cursor-pointer">
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         ))}

@@ -63,7 +63,7 @@ function TaskCard({ task, projectGoal }: { task: any; projectGoal: string }) {
         className="cursor-grab active:cursor-grabbing mb-3"
       >
         <h3 className="font-semibold text-white mb-2">{task.title}</h3>
-        <p className="text-sm text-gray-300 mb-2 line-clamp-2">
+        <p className="text-sm text-gray-300 mb-2">
           {task.description}
         </p>
       </div>
@@ -239,16 +239,16 @@ export default function ProjectDetailPage() {
       {/* Project Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
-        <p className="text-gray-600 mb-4">{project.goal}</p>
+        <p className="text-gray-400 mb-4">{project.goal}</p>
 
         <div className="flex gap-4">
-          <div className="bg-blue-500 text-white px-4 py-2 rounded">
+          <div className="bg-neutral-500 text-white px-4 py-2 rounded">
             Total: {project.total_estimated_days} days
           </div>
-          <div className="bg-green-500 text-white px-4 py-2 rounded">
+          <div className="bg-neutral-500 text-white px-4 py-2 rounded">
             Remaining: {project.remaining_days} days
           </div>
-          <div className="bg-yellow-500 text-white px-4 py-2 rounded">
+          <div className="bg-neutral-500 text-white px-4 py-2 rounded">
             Spent: {project.actual_days_spent} days
           </div>
         </div>
