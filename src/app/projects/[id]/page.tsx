@@ -21,9 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { toast } from "sonner";
 import TaskAssistantSheet from "@/components/task-assistant-sheet";
-
-// Task status type
-type TaskStatus = "pending" | "in_progress" | "completed" | "blocked";
+import type { Project, Task, TaskStatus } from "@/types/types";
 
 // Column configuration
 const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
@@ -34,7 +32,7 @@ const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
 ];
 
 // Draggable Task Card Component
-function TaskCard({ task, projectGoal }: { task: any; projectGoal: string }) {
+function TaskCard({ task, projectGoal }: { task: Task; projectGoal: string }) {
   const {
     attributes,
     listeners,
@@ -63,7 +61,7 @@ function TaskCard({ task, projectGoal }: { task: any; projectGoal: string }) {
         className="cursor-grab active:cursor-grabbing mb-3"
       >
         <h3 className="font-semibold text-white mb-2">{task.title}</h3>
-        <p className="text-sm text-gray-300 mb-2">
+        <p className="text-sm text-gray-300 mb-2 line-clamp-2">
           {task.description}
         </p>
       </div>
@@ -90,7 +88,7 @@ function Column({
   id: TaskStatus;
   label: string;
   color: string;
-  tasks: any[];
+  tasks: Task[];
   projectGoal: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -132,9 +130,9 @@ function Column({
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTask, setActiveTask] = useState<any>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -157,23 +155,38 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     loadProject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
-  // Group tasks by status
-  const tasksByStatus = project?.tasks.reduce(
-    (acc: Record<TaskStatus, any[]>, task: any) => {
-      const status = task.status as TaskStatus;
-      if (!acc[status]) acc[status] = [];
+  // Group tasks by status with proper typing
+  const tasksByStatus: Record<TaskStatus, Task[]> = project?.tasks.reduce(
+    (acc, task) => {
+      const status = task.status;
+      if (!acc[status]) {
+        acc[status] = [];
+      }
       acc[status].push(task);
       return acc;
     },
-    { pending: [], in_progress: [], completed: [], blocked: [] }
-  );
+    {
+      pending: [],
+      in_progress: [],
+      completed: [],
+      blocked: [],
+    } as Record<TaskStatus, Task[]>
+  ) ?? {
+    pending: [],
+    in_progress: [],
+    completed: [],
+    blocked: [],
+  };
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
-    const task = project.tasks.find((t: any) => t.id === event.active.id);
-    setActiveTask(task);
+    const task = project?.tasks.find((t) => t.id === event.active.id);
+    if (task) {
+      setActiveTask(task);
+    }
   };
 
   // Handle drag end
@@ -181,34 +194,39 @@ export default function ProjectDetailPage() {
     const { active, over } = event;
     setActiveTask(null);
 
-    if (!over) return;
+    if (!over || !project) return;
 
     const taskId = active.id as number;
-
-    // const newStatus = over.id as TaskStatus;
     let newStatus: TaskStatus | null = null;
 
+    // Check if dropped on a column
     if (over.data.current?.type === "column") {
-      newStatus = over.data.current.status;
+      newStatus = over.data.current.status as TaskStatus;
     } else {
       // Dropped on a task → use that task's status
-      const overTask = project.tasks.find((t: any) => t.id === over.id);
-      newStatus = overTask?.status ?? null;
+      const overTask = project.tasks.find((t) => t.id === over.id);
+      if (overTask) {
+        newStatus = overTask.status;
+      }
     }
 
     if (!newStatus) return;
 
     // Find the task being moved
-    const task = project.tasks.find((t: any) => t.id === taskId);
+    const task = project.tasks.find((t) => t.id === taskId);
     if (!task || task.status === newStatus) return;
 
     // Optimistic update
-    setProject((prev: any) => ({
-      ...prev,
-      tasks: prev.tasks.map((t: any) =>
-        t.id === taskId ? { ...t, status: newStatus } : t
-      ),
-    }));
+    setProject((prev) => {
+      if (!prev) return prev;
+      
+      return {
+        ...prev,
+        tasks: prev.tasks.map((t) =>
+          t.id === taskId ? { ...t, status: newStatus as TaskStatus } : t
+        ),
+      };
+    });
 
     // Update backend
     try {
@@ -217,38 +235,82 @@ export default function ProjectDetailPage() {
       // Show timeline update if available
       if (response.timeline_update) {
         const update = response.timeline_update;
-        toast(
-          `${update.reasoning}\n\nNew deadline: ${update.new_deadline}\nRemaining: ${update.remaining_days} days`
-        );
+        toast.success(update.reasoning, {
+          description: `New deadline: ${update.new_deadline} | Remaining: ${update.remaining_days} days`,
+        });
       }
 
       // Refresh to get accurate data
       await loadProject();
     } catch (error) {
       console.error("Failed to update task");
+      toast.error("Failed to update task status");
       // Revert optimistic update
       await loadProject();
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (!project) return <div className="p-6">Project not found</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="p-6 text-center">
+        <h1 className="text-2xl font-bold text-white mb-4">Project not found</h1>
+        <a href="/projects" className="text-purple-400 hover:text-purple-300">
+          Back to projects
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
       {/* Project Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{project.title}</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-3xl font-bold">{project.title}</h1>
+          
+          {/* Status Badge */}
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              project.status === "completed"
+                ? "bg-green-500 text-white"
+                : project.status === "active"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-500 text-white"
+            }`}
+          >
+            {project.status === "completed" && "✓ "}
+            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+          </span>
+        </div>
+
         <p className="text-gray-400 mb-4">{project.goal}</p>
 
+        {/* Completion Message */}
+        {project.status === "completed" && project.completed_at && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+            <p className="text-green-400 font-medium">
+              🎉 Project completed on{" "}
+              {new Date(project.completed_at).toLocaleDateString()}!
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-4">
-          <div className="bg-neutral-500 text-white px-4 py-2 rounded">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded">
             Total: {project.total_estimated_days} days
           </div>
-          <div className="bg-neutral-500 text-white px-4 py-2 rounded">
+          <div className="bg-green-500 text-white px-4 py-2 rounded">
             Remaining: {project.remaining_days} days
           </div>
-          <div className="bg-neutral-500 text-white px-4 py-2 rounded">
+          <div className="bg-yellow-500 text-white px-4 py-2 rounded">
             Spent: {project.actual_days_spent} days
           </div>
         </div>
@@ -270,7 +332,7 @@ export default function ProjectDetailPage() {
                 id={column.id}
                 label={column.label}
                 color={column.color}
-                tasks={tasksByStatus?.[column.id] || []}
+                tasks={tasksByStatus[column.id]}
                 projectGoal={project.goal}
               />
             ))}

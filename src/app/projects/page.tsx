@@ -69,7 +69,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Projects</h1>
 
@@ -152,9 +152,9 @@ export default function ProjectsPage() {
         </Dialog>
       </div>
 
-      <div className="space-y-4 flex flex-col md:flex-row gap-6">
-        {projects.map((project: any) => (
-          <div key={project.id} className="border p-4 rounded-lg">
+      <div className="grid grid-cols-1 md:grid-cols-3 w-full gap-4">
+        {projects.map((project) => (
+          <div key={project.id} className="border p-4 rounded-lg min-w-lg">
             <div className="flex flex-col justify-between items-start">
               <div className="flex-1">
                 <Link
@@ -169,8 +169,18 @@ export default function ProjectsPage() {
 
                 <p className="text-gray-400 mt-1 max-w-2xl">{project.goal}</p>
                 <div className="mt-2 flex gap-2 text-sm">
-                  <span className="bg-green-500 text-white px-2 py-1 rounded">
-                    {project.status}
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      project.status === "completed"
+                        ? "bg-green-500 text-white"
+                        : project.status === "active"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-500 text-white"
+                    }`}
+                  >
+                    {project.status === "completed" && "✓ "}
+                    {project.status.charAt(0).toUpperCase() +
+                      project.status.slice(1)}
                   </span>
                   <span className="bg-neutral-500 text-white px-2 py-1 rounded">
                     {project.total_estimated_days} days total
@@ -183,10 +193,7 @@ export default function ProjectsPage() {
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    className="mt-6 cursor-pointer"
-                  >
+                  <Button variant="destructive" className="mt-6 cursor-pointer">
                     Delete
                   </Button>
                 </DialogTrigger>

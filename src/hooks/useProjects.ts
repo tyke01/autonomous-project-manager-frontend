@@ -1,10 +1,12 @@
 "use client";
 
+import { Project } from '@/types/types';
+
 import { useState, useEffect } from "react";
 import { fetchProjects, deleteProject as deleteProjectApi } from "@/actions/projects";
 
 export function useProjects() {
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadProjects = async () => {

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, Loader2, Sparkles, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 
 interface Message {
   id: number;
@@ -34,6 +35,12 @@ interface TaskAssistantSheetProps {
   };
   projectGoal: string;
 }
+
+
+type CodeProps = {
+  inline?: boolean;
+  children?: React.ReactNode;
+};
 
 export default function TaskAssistantSheet({ task }: TaskAssistantSheetProps) {
   const [open, setOpen] = useState(false);
@@ -127,16 +134,104 @@ export default function TaskAssistantSheet({ task }: TaskAssistantSheetProps) {
     }
   };
 
-  // const handleCopy = async () => {
-  //   try {
-  //     await navigator.clipboard.writeText(textToCopy);
-  //     setIsCopied(true);
-  //     // Reset the "copied" status after 1.5 seconds
-  //     setTimeout(() => setIsCopied(false), 1500);
-  //   } catch (err) {
-  //     console.error("Failed to copy text: ", err);
-  //   }
-  // };
+  const markdownComponents: Components = {
+    h1: ({ children }) => (
+      <h1 className="text-xl font-bold text-white mb-3 mt-4 first:mt-0">
+        {children}
+      </h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-lg font-semibold text-white mb-2 mt-4 first:mt-0">
+        {children}
+      </h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-base font-semibold text-white mb-2 mt-3 first:mt-0">
+        {children}
+      </h3>
+    ),
+
+    p: ({ children }) => (
+      <p className="text-gray-300 mb-3 leading-relaxed">{children}</p>
+    ),
+
+    ul: ({ children }) => (
+      <ul className="list-disc list-inside text-gray-300 mb-3 space-y-1 ml-2">
+        {children}
+      </ul>
+    ),
+    ol: ({ children }) => (
+      <ol className="list-decimal list-inside text-gray-300 mb-3 space-y-1 ml-2">
+        {children}
+      </ol>
+    ),
+    li: ({ children }) => <li className="text-gray-300 ml-2">{children}</li>,
+
+    code: ({ inline, children }: CodeProps) => {
+      const codeText = String(children).replace(/\n$/, "");
+
+      const handleCopy = async () => {
+        try {
+          await navigator.clipboard.writeText(codeText);
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 1500);
+        } catch (err) {
+          console.error("Copy failed", err);
+        }
+      };
+
+      return inline ? (
+        <code className="bg-neutral-900 px-1.5 py-0.5 rounded text-purple-400 text-sm font-mono">
+          {children}
+        </code>
+      ) : (
+        <div className="relative group">
+          <pre className="bg-neutral-900 p-3 rounded-md text-gray-300 text-sm overflow-x-auto font-mono border border-gray-700">
+            <code>{children}</code>
+          </pre>
+
+          <Button
+            onClick={handleCopy}
+            className="absolute top-2 right-2 text-sm bg-gray-700 hover:bg-gray-800 px-4 rounded  transition text-white font-normal cursor-pointer"
+            size="sm"
+          >
+            {isCopied ? "Copied!" : "Copy"}
+          </Button>
+        </div>
+      );
+    },
+
+    pre: ({ children }) => (
+      <pre className="bg-neutral-900 p-3 rounded-md overflow-x-auto my-2 border border-neutral-900">
+        {children}
+      </pre>
+    ),
+
+    a: ({ children, href }) => (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-purple-400 hover:text-purple-300 underline decoration-purple-400/50 hover:decoration-purple-300 transition-colors"
+      >
+        {children}
+      </a>
+    ),
+
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-purple-500 pl-4 italic text-gray-400 my-3 bg-gray-900/50 py-2">
+        {children}
+      </blockquote>
+    ),
+
+    strong: ({ children }) => (
+      <strong className="font-semibold text-white">{children}</strong>
+    ),
+
+    em: ({ children }) => <em className="italic text-gray-200">{children}</em>,
+
+    hr: () => <hr className="border-gray-700 my-4" />,
+  };
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
@@ -205,113 +300,7 @@ export default function TaskAssistantSheet({ task }: TaskAssistantSheetProps) {
               >
                 {message.role === "assistant" ? (
                   <ReactMarkdown
-                    // className="prose prose-invert prose-sm max-w-none"
-                    components={{
-                      h1: ({ children }) => (
-                        <h1 className="text-xl font-bold text-white mb-3 mt-4 first:mt-0">
-                          {children}
-                        </h1>
-                      ),
-                      h2: ({ children }) => (
-                        <h2 className="text-lg font-semibold text-white mb-2 mt-4 first:mt-0">
-                          {children}
-                        </h2>
-                      ),
-                      h3: ({ children }) => (
-                        <h3 className="text-base font-semibold text-white mb-2 mt-3 first:mt-0">
-                          {children}
-                        </h3>
-                      ),
-
-                      p: ({ children }) => (
-                        <p className="text-gray-300 mb-3 leading-relaxed">
-                          {children}
-                        </p>
-                      ),
-
-                      ul: ({ children }) => (
-                        <ul className="list-disc list-inside text-gray-300 mb-3 space-y-1 ml-2">
-                          {children}
-                        </ul>
-                      ),
-                      ol: ({ children }) => (
-                        <ol className="list-decimal list-inside text-gray-300 mb-3 space-y-1 ml-2">
-                          {children}
-                        </ol>
-                      ),
-                      li: ({ children }) => (
-                        <li className="text-gray-300 ml-2">{children}</li>
-                      ),
-
-                      code: ({ inline, children }: any) => {
-                        const codeText = String(children).replace(/\n$/, "");
-
-                        const handleCopy = async () => {
-                          try {
-                            await navigator.clipboard.writeText(codeText);
-                            setIsCopied(true);
-                            setTimeout(() => setIsCopied(false), 1500);
-                          } catch (err) {
-                            console.error("Copy failed", err);
-                          }
-                        };
-
-                        return inline ? (
-                          <code className="bg-neutral-900 px-1.5 py-0.5 rounded text-purple-400 text-sm font-mono">
-                            {children}
-                          </code>
-                        ) : (
-                          <div className="relative group">
-                            <pre className="bg-neutral-900 p-3 rounded-md text-gray-300 text-sm overflow-x-auto font-mono border border-gray-700">
-                              <code>{children}</code>
-                            </pre>
-
-                            <Button
-                              onClick={handleCopy}
-                              className="absolute top-2 right-2 text-sm bg-gray-700 hover:bg-gray-800 px-4 rounded  transition text-white font-normal cursor-pointer"
-                              size="sm"
-                            >
-                              {isCopied ? "Copied!" : "Copy"}
-                            </Button>
-                          </div>
-                        );
-                      },
-
-                      pre: ({ children }) => (
-                        <pre className="bg-neutral-900 p-3 rounded-md overflow-x-auto my-2 border border-neutral-900">
-                          {children}
-                        </pre>
-                      ),
-
-                      a: ({ children, href }) => (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-purple-400 hover:text-purple-300 underline decoration-purple-400/50 hover:decoration-purple-300 transition-colors"
-                        >
-                          {children}
-                        </a>
-                      ),
-
-                      blockquote: ({ children }) => (
-                        <blockquote className="border-l-4 border-purple-500 pl-4 italic text-gray-400 my-3 bg-gray-900/50 py-2">
-                          {children}
-                        </blockquote>
-                      ),
-
-                      strong: ({ children }) => (
-                        <strong className="font-semibold text-white">
-                          {children}
-                        </strong>
-                      ),
-
-                      em: ({ children }) => (
-                        <em className="italic text-gray-200">{children}</em>
-                      ),
-
-                      hr: () => <hr className="border-gray-700 my-4" />,
-                    }}
+                    components={markdownComponents}
                   >
                     {message.content}
                   </ReactMarkdown>
